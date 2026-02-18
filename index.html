@@ -5,12 +5,598 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Etch A Sketch</title>
     <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      html, body { overflow: hidden; width: 100%; height: 100%; }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #1a1a1a;
+        font-family: "Georgia", serif;
+      }
+      #stage {
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #toy {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        background: linear-gradient(
+          160deg,
+          #e03030 0%,
+          #d42426 15%,
+          #c41e20 40%,
+          #b01a1c 70%,
+          #9e1618 100%
+        );
+        overflow: hidden;
+        box-shadow:
+          inset 0 2px 8px rgba(255, 255, 255, 0.15),
+          inset 0 -4px 12px rgba(0, 0, 0, 0.2),
+          0 8px 40px rgba(0, 0, 0, 0.6),
+          0 2px 10px rgba(0, 0, 0, 0.4);
+      }
+      .shine {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        pointer-events: none;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, transparent 100%);
+      }
+      .screw-row {
+        position: absolute;
+        left: 0;
+        right: 0;
+        display: flex;
+        justify-content: space-between;
+        pointer-events: none;
+      }
+      .screw {
+        position: relative;
+        border-radius: 50%;
+        background: radial-gradient(circle at 38% 38%, #e0e0e0, #999, #777);
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(255, 255, 255, 0.1);
+      }
+      .screw::after {
+        content: "";
+        position: absolute;
+        background: #666;
+        border-radius: 1px;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(35deg);
+      }
+      .logo {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .logo h1 {
+        color: #ffd700;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 215, 0, 0.2);
+        font-weight: bold;
+        line-height: 1;
+        white-space: nowrap;
+      }
+      .logo-line {
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #ffd700, transparent);
+      }
+      .logo p {
+        color: rgba(255, 215, 0, 0.65);
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        white-space: nowrap;
+      }
+      .screen-area {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .bezel {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(155deg, #9a9a9a, #7a7a7a, #686868);
+        box-shadow:
+          inset 0 3px 8px rgba(0, 0, 0, 0.5),
+          inset 0 -1px 4px rgba(255, 255, 255, 0.1),
+          0 2px 6px rgba(0, 0, 0, 0.3);
+      }
+      .screen {
+        overflow: hidden;
+        box-shadow: inset 0 3px 12px rgba(0, 0, 0, 0.35), inset 0 -2px 4px rgba(255, 255, 255, 0.08);
+      }
+      canvas {
+        display: block;
+        background: #c0c0c0;
+      }
+      .controls {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .shake-btn {
+        background: linear-gradient(145deg, #ffd700, #daa520, #c8960e);
+        color: #8b0000;
+        border: 2px solid rgba(139, 0, 0, 0.15);
+        font-weight: bold;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35), inset 0 1px 3px rgba(255, 255, 255, 0.5),
+          inset 0 -1px 2px rgba(0, 0, 0, 0.2);
+      }
+      .shake-btn:hover {
+        transform: scale(1.05);
+      }
+      .shake-btn:active {
+        transform: scale(0.95);
+      }
+      .dial {
+        position: relative;
+        border-radius: 50%;
+        background: radial-gradient(circle at 35% 35%, #ffffff 0%, #f0f0f0 10%, #e0e0e0 25%, #c8c8c8 45%, #aaaaaa 70%, #888888 100%);
+        box-shadow:
+          0 6px 18px rgba(0, 0, 0, 0.45),
+          0 2px 5px rgba(0, 0, 0, 0.35),
+          inset 0 2px 4px rgba(255, 255, 255, 0.7),
+          inset 0 -3px 6px rgba(0, 0, 0, 0.25);
+        cursor: grab;
+        user-select: none;
+        flex-shrink: 0;
+      }
+      .dial:active {
+        cursor: grabbing;
+      }
+      .grip-lines {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+      .grip-line {
+        position: absolute;
+        left: 50%;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 1px;
+      }
+      .dial-cap {
+        position: absolute;
+        border-radius: 50%;
+        background: radial-gradient(circle at 40% 40%, #e8e8e8, #aaa, #888);
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.35), 0 1px 1px rgba(255, 255, 255, 0.3);
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+      .dial-notch {
+        position: absolute;
+        left: 50%;
+        background: linear-gradient(180deg, #555, #777);
+        border-radius: 2px;
+        transform: translateX(-50%);
+      }
+      .branding {
+        position: absolute;
+        left: 0;
+        right: 0;
+        text-align: center;
+        pointer-events: none;
+        color: rgba(255, 215, 0, 0.3);
+      }
+      @keyframes shake {
+        0%,
+        100% {
+          transform: translate(0, 0) rotate(0deg);
+        }
+        10% {
+          transform: translate(-12px, -8px) rotate(-2deg);
+        }
+        20% {
+          transform: translate(10px, 12px) rotate(1.5deg);
+        }
+        30% {
+          transform: translate(-14px, 6px) rotate(-1.5deg);
+        }
+        40% {
+          transform: translate(12px, -10px) rotate(2deg);
+        }
+        50% {
+          transform: translate(-8px, 8px) rotate(-2.5deg);
+        }
+        60% {
+          transform: translate(14px, -6px) rotate(1.5deg);
+        }
+        70% {
+          transform: translate(-10px, 10px) rotate(-1deg);
+        }
+        80% {
+          transform: translate(8px, -8px) rotate(2deg);
+        }
+        90% {
+          transform: translate(-6px, 6px) rotate(-1.5deg);
+        }
+      }
+      .shake {
+        animation: shake 0.8s ease-in-out;
+      }
     </style>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <div id="stage">
+      <div id="toy">
+        <div class="shine"></div>
+        <div class="screw-row top">
+          <div class="screw"></div>
+          <div class="screw"></div>
+        </div>
+        <div class="screw-row bottom">
+          <div class="screw"></div>
+          <div class="screw"></div>
+        </div>
+
+        <div class="logo">
+          <h1>ETCH A SKETCH</h1>
+          <div class="logo-line"></div>
+          <p>MAGIC SCREEN</p>
+        </div>
+
+        <div class="screen-area">
+          <div class="bezel">
+            <div class="screen">
+              <canvas id="etch-canvas"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="controls">
+          <div class="dial" id="dial-left">
+            <div class="grip-lines"></div>
+            <div class="dial-cap"></div>
+            <div class="dial-notch"></div>
+          </div>
+          <button class="shake-btn" id="shake-btn">SHAKE TO CLEAR</button>
+          <div class="dial" id="dial-right">
+            <div class="grip-lines"></div>
+            <div class="dial-cap"></div>
+            <div class="dial-notch"></div>
+          </div>
+        </div>
+
+        <div class="branding">OHIO ART</div>
+      </div>
+    </div>
+
+    <script>
+      const ASPECT_RATIO = 4 / 3;
+      const LINE_COLOR = "#3a3a3a";
+      const LINE_WIDTH = 1.5;
+      const SCREEN_BG = "#c0c0c0";
+      const STEP = 2;
+
+      const stage = document.getElementById("stage");
+      const toy = document.getElementById("toy");
+      const canvas = document.getElementById("etch-canvas");
+      const shine = document.querySelector(".shine");
+      const logo = document.querySelector(".logo");
+      const logoTitle = document.querySelector(".logo h1");
+      const logoLine = document.querySelector(".logo-line");
+      const logoSub = document.querySelector(".logo p");
+      const screenArea = document.querySelector(".screen-area");
+      const bezel = document.querySelector(".bezel");
+      const screen = document.querySelector(".screen");
+      const controls = document.querySelector(".controls");
+      const shakeBtn = document.getElementById("shake-btn");
+      const branding = document.querySelector(".branding");
+      const screwRows = document.querySelectorAll(".screw-row");
+      const screws = document.querySelectorAll(".screw");
+      const dialLeft = document.getElementById("dial-left");
+      const dialRight = document.getElementById("dial-right");
+
+      let canvasSize = { w: 600, h: 400 };
+      let toySize = { w: 800, h: 600 };
+      let leftAngle = 0;
+      let rightAngle = 0;
+      let isShaking = false;
+      let screenOpacity = 1;
+      let pos = { x: 0, y: 0 };
+      let leftDragging = false;
+      let rightDragging = false;
+      let lastMouseAngle = { left: 0, right: 0 };
+      const keysPressed = new Set();
+      let animFrame = 0;
+
+      const ctx = canvas.getContext("2d");
+
+      function updateLayout() {
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+
+        let toyW, toyH;
+        if (vw / vh > ASPECT_RATIO) {
+          toyH = vh;
+          toyW = vh * ASPECT_RATIO;
+        } else {
+          toyW = vw;
+          toyH = vw / ASPECT_RATIO;
+        }
+
+        const cw = Math.max(200, Math.floor(toyW * 0.72));
+        const ch = Math.max(120, Math.floor(toyH * 0.5));
+
+        toySize = { w: toyW, h: toyH };
+        canvasSize = { w: cw, h: ch };
+
+        toy.style.width = `${toyW}px`;
+        toy.style.height = `${toyH}px`;
+        toy.style.borderRadius = `${toyW * 0.025}px`;
+
+        shine.style.height = `${toyH * 0.01}px`;
+        shine.style.borderRadius = `${toyW * 0.025}px ${toyW * 0.025}px 0 0`;
+
+        const screwSize = Math.max(10, toyW * 0.018);
+        screwRows.forEach((row, index) => {
+          row.style.top = index === 0 ? `${toyH * 0.025}px` : "";
+          row.style.bottom = index === 1 ? `${toyH * 0.025}px` : "";
+          row.style.left = `${toyW * 0.025}px`;
+          row.style.right = `${toyW * 0.025}px`;
+        });
+        screws.forEach((screw) => {
+          screw.style.width = `${screwSize}px`;
+          screw.style.height = `${screwSize}px`;
+          screw.querySelectorAll("::after");
+          screw.style.setProperty("--screw-size", screwSize);
+          screw.style.position = "relative";
+          const slot = screw.querySelector(".slot");
+          if (!slot) {
+            const slotEl = document.createElement("div");
+            slotEl.className = "slot";
+            slotEl.style.position = "absolute";
+            slotEl.style.width = `${screwSize * 0.55}px`;
+            slotEl.style.height = `${screwSize * 0.1}px`;
+            slotEl.style.background = "#666";
+            slotEl.style.top = "50%";
+            slotEl.style.left = "50%";
+            slotEl.style.transform = "translate(-50%, -50%) rotate(35deg)";
+            slotEl.style.borderRadius = "1px";
+            screw.appendChild(slotEl);
+          } else {
+            slot.style.width = `${screwSize * 0.55}px`;
+            slot.style.height = `${screwSize * 0.1}px`;
+          }
+        });
+
+        logo.style.paddingTop = `${toyH * 0.04}px`;
+        logo.style.paddingBottom = `${toyH * 0.015}px`;
+        logoTitle.style.fontSize = `${toyW * 0.035}px`;
+        logoTitle.style.letterSpacing = `${toyW * 0.012}px`;
+        logoLine.style.width = `${toyW * 0.24}px`;
+        logoLine.style.marginTop = `${toyH * 0.008}px`;
+        logoSub.style.marginTop = `${toyH * 0.006}px`;
+        logoSub.style.fontSize = `${toyW * 0.013}px`;
+        logoSub.style.letterSpacing = `${toyW * 0.008}px`;
+
+        screenArea.style.padding = `0 ${toyW * 0.05}px`;
+        bezel.style.width = `${cw + toyW * 0.04}px`;
+        bezel.style.height = `${ch + toyW * 0.04}px`;
+        bezel.style.padding = `${toyW * 0.02}px`;
+        bezel.style.borderRadius = `${toyW * 0.012}px`;
+        screen.style.width = `${cw}px`;
+        screen.style.height = `${ch}px`;
+        screen.style.borderRadius = `${toyW * 0.006}px`;
+
+        canvas.width = cw;
+        canvas.height = ch;
+        canvas.style.width = `${cw}px`;
+        canvas.style.height = `${ch}px`;
+
+        controls.style.padding = `${toyH * 0.03}px ${toyW * 0.08}px ${toyH * 0.045}px`;
+
+        const dialSize = Math.max(40, toyW * 0.085);
+        setupDial(dialLeft, dialSize);
+        setupDial(dialRight, dialSize);
+
+        shakeBtn.style.borderRadius = `${toyW * 0.03}px`;
+        shakeBtn.style.padding = `${toyH * 0.015}px ${toyW * 0.04}px`;
+        shakeBtn.style.fontSize = `${toyW * 0.014}px`;
+        shakeBtn.style.letterSpacing = `${toyW * 0.003}px`;
+
+        branding.style.paddingBottom = `${toyH * 0.01}px`;
+        branding.style.fontSize = `${toyW * 0.01}px`;
+        branding.style.letterSpacing = `${toyW * 0.004}px`;
+
+        resetCanvas();
+      }
+
+      function resetCanvas() {
+        ctx.fillStyle = SCREEN_BG;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        pos = { x: canvas.width / 2, y: canvas.height / 2 };
+        ctx.fillStyle = LINE_COLOR;
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, 1, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      function drawLine(dx, dy) {
+        const prev = { ...pos };
+        pos.x = Math.max(0, Math.min(canvas.width, pos.x + dx));
+        pos.y = Math.max(0, Math.min(canvas.height, pos.y + dy));
+        ctx.strokeStyle = LINE_COLOR;
+        ctx.lineWidth = LINE_WIDTH;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(prev.x, prev.y);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+      }
+
+      function handleKeyDown(e) {
+        keysPressed.add(e.key);
+        if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+          e.preventDefault();
+        }
+      }
+
+      function handleKeyUp(e) {
+        keysPressed.delete(e.key);
+      }
+
+      function tick() {
+        let dx = 0;
+        let dy = 0;
+        if (keysPressed.has("ArrowLeft")) {
+          dx -= STEP;
+          leftAngle -= 3;
+        }
+        if (keysPressed.has("ArrowRight")) {
+          dx += STEP;
+          leftAngle += 3;
+        }
+        if (keysPressed.has("ArrowUp")) {
+          dy -= STEP;
+          rightAngle -= 3;
+        }
+        if (keysPressed.has("ArrowDown")) {
+          dy += STEP;
+          rightAngle += 3;
+        }
+        if (dx !== 0 || dy !== 0) {
+          drawLine(dx, dy);
+          updateDialRotation();
+        }
+        animFrame = requestAnimationFrame(tick);
+      }
+
+      function getAngleFromEvent(e, dialElement) {
+        const rect = dialElement.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        return Math.atan2(e.clientY - cy, e.clientX - cx) * (180 / Math.PI);
+      }
+
+      function handleDialDown(side, e) {
+        if (side === "left") {
+          leftDragging = true;
+          lastMouseAngle.left = getAngleFromEvent(e, dialLeft);
+        } else {
+          rightDragging = true;
+          lastMouseAngle.right = getAngleFromEvent(e, dialRight);
+        }
+
+        function onMove(ev) {
+          if (side === "left" && !leftDragging) return;
+          if (side === "right" && !rightDragging) return;
+
+          const dial = side === "left" ? dialLeft : dialRight;
+          const newAngle = getAngleFromEvent(ev, dial);
+          const lastAngle = side === "left" ? lastMouseAngle.left : lastMouseAngle.right;
+
+          let delta = newAngle - lastAngle;
+          if (delta > 180) delta -= 360;
+          if (delta < -180) delta += 360;
+
+          if (side === "left") {
+            lastMouseAngle.left = newAngle;
+            leftAngle += delta;
+            drawLine(delta * 0.3, 0);
+          } else {
+            lastMouseAngle.right = newAngle;
+            rightAngle += delta;
+            drawLine(0, delta * 0.3);
+          }
+          updateDialRotation();
+        }
+
+        function onUp() {
+          leftDragging = false;
+          rightDragging = false;
+          window.removeEventListener("mousemove", onMove);
+          window.removeEventListener("mouseup", onUp);
+        }
+
+        window.addEventListener("mousemove", onMove);
+        window.addEventListener("mouseup", onUp);
+      }
+
+      function updateDialRotation() {
+        dialLeft.style.transform = `rotate(${leftAngle}deg)`;
+        dialRight.style.transform = `rotate(${rightAngle}deg)`;
+      }
+
+      function setupDial(dial, size) {
+        dial.style.width = `${size}px`;
+        dial.style.height = `${size}px`;
+        const cap = dial.querySelector(".dial-cap");
+        const notch = dial.querySelector(".dial-notch");
+        const gripContainer = dial.querySelector(".grip-lines");
+
+        const capSize = size * 0.18;
+        cap.style.width = `${capSize}px`;
+        cap.style.height = `${capSize}px`;
+
+        notch.style.width = `${Math.max(2.5, size * 0.04)}px`;
+        notch.style.height = `${size * 0.16}px`;
+        notch.style.top = `${size * 0.08}px`;
+
+        const gripCount = Math.max(8, Math.round(size / 7));
+        if (gripContainer.childElementCount !== gripCount) {
+          gripContainer.innerHTML = "";
+          for (let i = 0; i < gripCount; i++) {
+            const line = document.createElement("div");
+            line.className = "grip-line";
+            gripContainer.appendChild(line);
+          }
+        }
+        Array.from(gripContainer.children).forEach((line, i) => {
+          line.style.width = `${Math.max(1.5, size * 0.025)}px`;
+          line.style.height = `${size * 0.1}px`;
+          line.style.top = `${size * 0.06}px`;
+          line.style.transformOrigin = `center ${size * 0.44}px`;
+          line.style.transform = `translateX(-50%) rotate(${i * (360 / gripCount)}deg)`;
+        });
+      }
+
+      function clearScreen() {
+        if (isShaking) return;
+        isShaking = true;
+        toy.classList.add("shake");
+
+        let opacity = 1;
+        const fadeInterval = setInterval(() => {
+          opacity -= 0.05;
+          screenOpacity = Math.max(0, opacity);
+          canvas.style.opacity = screenOpacity;
+          if (opacity <= 0) {
+            clearInterval(fadeInterval);
+            resetCanvas();
+            canvas.style.opacity = 1;
+            setTimeout(() => {
+              toy.classList.remove("shake");
+              isShaking = false;
+            }, 200);
+          }
+        }, 40);
+      }
+
+      dialLeft.addEventListener("mousedown", (e) => handleDialDown("left", e));
+      dialRight.addEventListener("mousedown", (e) => handleDialDown("right", e));
+      shakeBtn.addEventListener("click", clearScreen);
+      window.addEventListener("keydown", handleKeyDown);
+      window.addEventListener("keyup", handleKeyUp);
+      window.addEventListener("resize", updateLayout);
+
+      updateLayout();
+      updateDialRotation();
+      animFrame = requestAnimationFrame(tick);
+    </script>
   </body>
 </html>
